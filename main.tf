@@ -8,6 +8,10 @@ terraform {
   }
 }
 
+resource "azurerm_resource_provider_registration" "github_network_provider" {
+  name = "GitHub.Network"
+}
+
 resource "azurerm_network_security_group" "actions_NSG" {
   name                = var.nsg_name
   location            = var.location
