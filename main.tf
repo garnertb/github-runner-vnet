@@ -109,14 +109,14 @@ resource "azurerm_network_security_group" "actions_NSG" {
 }
 
 resource "azurerm_virtual_network" "ghvnet" {
-  name                = "actions-vnet"
+  name                = var.vnet_name
   location            = var.location
   resource_group_name = azurerm_network_security_group.actions_NSG.resource_group_name
   address_space       = var.address_space
 }
 
 resource "azurerm_subnet" "subnet" {
-  name                 = "actions-subnet"
+  name                 = var.subnet_name
   resource_group_name  = azurerm_network_security_group.actions_NSG.resource_group_name
   virtual_network_name = azurerm_virtual_network.ghvnet.name
 
