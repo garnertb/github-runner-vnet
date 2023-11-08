@@ -26,3 +26,15 @@ variable "address_prefixes" {
   type        = list(string)
   default     = ["10.0.0.0/24"]
 }
+
+variable "vnet_name" {
+  description = "Name of virtual network"
+  type = string
+  default = "ghvnet"
+}
+
+variable "subnet_name" {
+  description = "Name of subnet"
+  type = string
+  default = "ghsubnet"
+}
