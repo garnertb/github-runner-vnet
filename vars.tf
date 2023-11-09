@@ -10,6 +10,11 @@ variable "nsg_name" {
   default     = "actions_nsg"
 }
 
+variable "github_database_id" {
+  description = "GitHub Database ID for your enterprise"
+  type        = string
+}
+
 variable "resource_group_name" {
   description = "Name of the resource group in which to create the NSG"
   type        = string

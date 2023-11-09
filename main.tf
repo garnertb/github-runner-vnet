@@ -8,8 +8,8 @@ terraform {
   }
 }
 
-resource "azurerm_resource_provider_registration" "github_network_provider" {
-  name = "GitHub.Network"
+data "azurerm_resources" "github_network_provider" {
+  name = "${var.nsg_name}_np"
 }
 
 resource "azurerm_network_security_group" "actions_NSG" {
@@ -128,9 +128,10 @@ resource "azurerm_subnet" "subnet" {
 
   delegation {
     name = "delegation"
-
+    
     service_delegation {
       name = "GitHub.Network/networkSettings"
+      actions = ["Microsoft.Network/virtualNetworks/subnets/join/action"]
     }
   }
 }
@@ -138,4 +139,14 @@ resource "azurerm_subnet" "subnet" {
 resource "azurerm_subnet_network_security_group_association" "subnet_nsg_association" {
   subnet_id                 = azurerm_subnet.subnet.id
   network_security_group_id = azurerm_network_security_group.actions_NSG.id
+}
+
+resource "null_resource" "register_rp_to_mg" {
+  provisioner "local-exec" {
+    command = <<CMD
+         az resource create --resource-group ${azurerm_network_security_group.actions_NSG.resource_group_name}  --name ${var.nsg_name}_np --resource-type GitHub.Network/networkSettings --properties "{ \"location\": \"${azurerm_network_security_group.actions_NSG.location}\", \"properties\" : {  \"subnetId\": \"${azurerm_subnet.subnet.id}\", \"organizationId\": \"${var.github_database_id}\" }}" --is-full-object --output table --query "{GitHubId:tags.GitHubId, name:name}" --api-version 2023-11-01-preview
+    CMD
+    when = create
+  }
+
 }
