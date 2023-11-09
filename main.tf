@@ -131,6 +131,7 @@ resource "azurerm_subnet" "subnet" {
 
     service_delegation {
       name = "GitHub.Network/networkSettings"
+      actions = ["Microsoft.Network/virtualNetworks/subnets/join/action"]
     }
   }
 }
