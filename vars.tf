@@ -29,12 +29,12 @@ variable "address_prefixes" {
 
 variable "vnet_name" {
   description = "Name of virtual network"
-  type = string
-  default = "ghvnet"
+  type        = string
+  default     = "ghvnet"
 }
 
 variable "subnet_name" {
   description = "Name of subnet"
-  type = string
-  default = "ghsubnet"
+  type        = string
+  default     = "ghsubnet"
 }
