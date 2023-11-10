@@ -15,7 +15,7 @@ Provision and configure the infrastructure in Terraform by calling this module.
 
 ```hcl
 module "github_runner_vnet" {
-  source = "garnertb/terraform-github-runner-vnet"
+  source = "github.com/garnertb/github-runner-vnet"
   resource_group_name = "vnet-test"
 }
 ```
