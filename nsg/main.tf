@@ -12,10 +12,15 @@ resource "azurerm_resource_provider_registration" "github_network_provider" {
   name = "GitHub.Network"
 }
 
-resource "azurerm_network_security_group" "actions_NSG" {
-  name                = var.nsg_name
+resource "azurerm_resource_group" "resource_group" {
+  location = var.location
+  name     = "${var.base_name}-rg"
+}
+
+resource "azurerm_network_security_group" "actions_nsg" {
+  name                = "${var.base_name}-actions-nsg"
   location            = var.location
-  resource_group_name = var.resource_group_name
+  resource_group_name = azurerm_resource_group.resource_group.name
 
   security_rule {
     name                       = "DenyInternetOutBoundOverwrite"
@@ -112,19 +117,19 @@ resource "azurerm_network_security_group" "actions_NSG" {
   }
 }
 
-resource "azurerm_virtual_network" "ghvnet" {
-  name                = var.vnet_name
+resource "azurerm_virtual_network" "vnet" {
+  name                = "${var.base_name}-vnet"
   location            = var.location
-  resource_group_name = azurerm_network_security_group.actions_NSG.resource_group_name
-  address_space       = var.address_space
+  resource_group_name = azurerm_resource_group.resource_group.name
+  address_space       = var.vnet_address_space
 }
 
-resource "azurerm_subnet" "subnet" {
-  name                 = var.subnet_name
-  resource_group_name  = azurerm_network_security_group.actions_NSG.resource_group_name
-  virtual_network_name = azurerm_virtual_network.ghvnet.name
+resource "azurerm_subnet" "runner_subnet" {
+  name                 = "${var.base_name}-runner-subnet"
+  resource_group_name  = azurerm_resource_group.resource_group.name
+  virtual_network_name = azurerm_virtual_network.vnet.name
 
-  address_prefixes = var.address_prefixes
+  address_prefixes = var.runner_subnet_address_prefixes
 
   delegation {
     name = "delegation"
@@ -134,9 +139,19 @@ resource "azurerm_subnet" "subnet" {
       actions = ["Microsoft.Network/virtualNetworks/subnets/join/action"]
     }
   }
+
+
+  # provisioner "local-exec" {
+  #   command = "../scripts/create-ns.sh ${azurerm_resource_group.resource_group.name} ${var.base_name}-ns ${var.location} ${azurerm_subnet.runner_subnet.id} ${var.gh_org_id}"
+  # }
+
+  # provisioner "local-exec" {
+  #   when = destroy
+  #   command = "../scripts/delete-ns.sh ${azurerm_resource_group.resource_group.name} ${var.base_name}-ns"
+  # }
 }
 
 resource "azurerm_subnet_network_security_group_association" "subnet_nsg_association" {
-  subnet_id                 = azurerm_subnet.subnet.id
-  network_security_group_id = azurerm_network_security_group.actions_NSG.id
+  subnet_id                 = azurerm_subnet.runner_subnet.id
+  network_security_group_id = azurerm_network_security_group.actions_nsg.id
 }
