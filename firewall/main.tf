@@ -38,6 +38,15 @@ resource "azurerm_subnet" "runner_subnet" {
   depends_on = [
     azurerm_virtual_network.vnet
   ]
+
+  # provisioner "local-exec" {
+  #   command = "../scripts/create-ns.sh ${azurerm_resource_group.resource_group.name} ${var.base_name}-ns ${var.location} ${azurerm_subnet.runner_subnet.id} ${var.gh_org_id}"
+  # }
+
+  # provisioner "local-exec" {
+  #   when = destroy
+  #   command = "../scripts/delete-ns.sh ${azurerm_resource_group.resource_group.name} ${var.base_name}-ns"
+  # }
 }
 
 resource "azurerm_public_ip" "firewall_public_ip" {

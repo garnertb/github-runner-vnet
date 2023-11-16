@@ -16,13 +16,18 @@ variable "vnet_address_space" {
 }
 
 variable "runner_subnet_address_prefixes" {
-  description = "Address prefixes for the subnet"
+  description = "Address prefixes for the runner subnet"
   type        = list(string)
   default     = ["10.0.0.0/24"]
 }
 
 variable "firewall_subnet_address_prefixes" {
-  description = "Address prefixes for the subnet"
+  description = "Address prefixes for the firewall subnet"
   type        = list(string)
   default     = ["10.0.1.0/26"]
+}
+
+variable "gh_org_id" {
+  description = "GitHub Organization ID"
+  type        = string
 }
