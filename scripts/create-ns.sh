@@ -1,0 +1,1 @@
+az resource create --resource-group "$1" --name "$2" --resource-type GitHub.Network/networkSettings --properties "{ \"location\": \"$3\", \"properties\" : {  \"subnetId\": \"$4\", \"organizationId\": \"$5\" }}" --is-full-object --output json --query "{GitHubId:tags.GitHubId, name:name}" --api-version 2023-11-01-preview
