@@ -1,6 +1,31 @@
+terraform {
+  required_providers {
+    azurerm = {
+      source  = "hashicorp/azurerm"
+      version = ">3.0.0"
+    }
+  }
+}
+
+locals {
+  rg_name = "${var.base_name}-rg"
+  ns_name = "${var.base_name}-ns"
+}
+
+# You need this if you haven't already registered the GitHub.Network resource provider in your Azure subscription.
+# Terraform doesn't manage this type of create-once-and-never-delete resource very well, so I've just commented it out.
+# Even with the lifecycle/prevent_destroy, it will still throw an error if you delete the resources manually with "terraform destroy".
+
+# resource "azurerm_resource_provider_registration" "github_network_provider" {
+#   name = "GitHub.Network"
+#   lifecycle {
+#     prevent_destroy = true
+#   }
+# }
+
 resource "azurerm_resource_group" "resource_group" {
   location = var.location
-  name     = "${var.base_name}-rg"
+  name     = local.rg_name
 }
 
 resource "azurerm_virtual_network" "vnet" {
@@ -38,15 +63,6 @@ resource "azurerm_subnet" "runner_subnet" {
   depends_on = [
     azurerm_virtual_network.vnet
   ]
-
-  # provisioner "local-exec" {
-  #   command = "../scripts/create-ns.sh ${azurerm_resource_group.resource_group.name} ${var.base_name}-ns ${var.location} ${azurerm_subnet.runner_subnet.id} ${var.gh_org_id}"
-  # }
-
-  # provisioner "local-exec" {
-  #   when = destroy
-  #   command = "../scripts/delete-ns.sh ${azurerm_resource_group.resource_group.name} ${var.base_name}-ns"
-  # }
 }
 
 resource "azurerm_public_ip" "firewall_public_ip" {
@@ -106,5 +122,38 @@ resource "azurerm_subnet_route_table_association" "runner_subnet_route_table_ass
   depends_on = [
     azurerm_route_table.route_table,
     azurerm_subnet.runner_subnet,
+  ]
+}
+
+# There is no Terraform provider for GitHub.Network, so we have to use a null_resource and
+# local-exec to call a script that uses the Azure CLI to create the network settings. We
+# can't add these provisioners to the runner subnet resource because a destroy provisioner
+# doesn't have access to any other resources including vars and locals. We need to use these
+# triggers to get those values. 
+
+# WARNING: Deleting this resource will fail if the networkSettings is still in use in github.com. You need
+# to delete resources in github.com before trying to delete the Azure resources.
+resource null_resource github_network_settings {
+  triggers = {
+    ns_name = local.ns_name
+    rg_name = local.rg_name
+    subnet_id = azurerm_subnet.runner_subnet.id
+  }
+
+  provisioner "local-exec" {
+    when = create
+    command = "../scripts/create-ns.sh ${self.triggers.rg_name} ${self.triggers.ns_name} ${var.location} ${self.triggers.subnet_id} ${var.gh_org_id} >> ${path.module}/ns.json"
+  }
+
+  provisioner "local-exec" {
+    when = destroy
+    command = "../scripts/delete-ns.sh ${self.triggers.rg_name} ${self.triggers.ns_name}"
+  }
+}
+
+data local_file ns {
+  filename = "${path.module}/ns.json"
+  depends_on = [
+    null_resource.github_network_settings
   ]
 }
