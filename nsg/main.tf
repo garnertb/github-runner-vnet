@@ -169,7 +169,7 @@ resource null_resource github_network_settings {
 
   provisioner "local-exec" {
     when = create
-    command = "../scripts/create-ns.sh ${self.triggers.rg_name} ${self.triggers.ns_name} ${var.location} ${self.triggers.subnet_id} ${var.gh_org_id} >> ${path.module}/ns.json"
+    command = "../scripts/create-ns.sh ${self.triggers.rg_name} ${self.triggers.ns_name} ${var.location} ${self.triggers.subnet_id} ${var.gh_org_id}"
   }
 
   provisioner "local-exec" {
@@ -178,14 +178,15 @@ resource null_resource github_network_settings {
   }
 }
 
-data local_file ns {
-  filename = "${path.module}/ns.json"
-  depends_on = [
-    null_resource.github_network_settings
-  ]
-}
-
 resource "azurerm_subnet_network_security_group_association" "subnet_nsg_association" {
   subnet_id                 = azurerm_subnet.runner_subnet.id
   network_security_group_id = azurerm_network_security_group.actions_nsg.id
+}
+
+# This data source is used to get the networkSettings resource created above, so that we can return its ID as an output.
+data "azurerm_resources" "github_network_settings" {
+  name = local.ns_name
+  depends_on = [
+    null_resource.github_network_settings
+  ]
 }
