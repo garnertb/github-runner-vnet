@@ -48,6 +48,16 @@ resource "azurerm_subnet" "firewall_subnet" {
   ]
 }
 
+resource "azurerm_subnet" "management_subnet" {
+  address_prefixes     = var.firewall_management_subnet_address_prefixes
+  name                 = "AzureFirewallManagementSubnet"
+  resource_group_name  = azurerm_resource_group.resource_group.name
+  virtual_network_name = azurerm_virtual_network.vnet.name
+  depends_on = [
+    azurerm_virtual_network.vnet
+  ]
+}
+
 resource "azurerm_subnet" "runner_subnet" {
   address_prefixes     = var.runner_subnet_address_prefixes
   name                 = "${var.base_name}-runner-subnet"
@@ -76,10 +86,82 @@ resource "azurerm_public_ip" "firewall_public_ip" {
   ]
 }
 
+resource "azurerm_public_ip" "firewall_management_public_ip" {
+  allocation_method   = "Static"
+  location            = var.location
+  name                = "${var.base_name}-firewall-mgmt-ip"
+  resource_group_name = azurerm_resource_group.resource_group.name
+  sku                 = "Standard"
+  depends_on = [
+    azurerm_resource_group.resource_group,
+  ]
+}
+
+resource "azurerm_firewall_policy" "firewall_policy" {
+  location            = var.location
+  name                = "${var.base_name}-firewall-policy"
+  resource_group_name = azurerm_resource_group.resource_group.name
+  depends_on = [
+    azurerm_resource_group.resource_group,
+  ]
+}
+
+resource "azurerm_firewall_policy_rule_collection_group" "firewall_policy_rule_collection_group" {
+  firewall_policy_id = azurerm_firewall_policy.firewall_policy.id
+  name               = "DefaultRuleCollectionGroup"
+  priority           = 200
+
+  network_rule_collection {
+    action   = "Allow"
+    name     = "AllowAzureCloud"
+    priority = 100
+    rule {
+      destination_addresses = ["AzureCloud"]
+      destination_ports     = ["443"]
+      name                  = "AzureCloud"
+      protocols             = ["TCP"]
+      source_addresses      = ["*"]
+    }
+  }
+
+  application_rule_collection {
+    action = "Allow"
+    name = "AllowApplicationRules"
+    priority = 1000
+    rule {
+      name = "GitHub"
+      source_addresses = ["*"]
+      destination_fqdns = [
+        "github.com",
+        "*.github.com",
+        "*.githubusercontent.com",
+        "*.githubapp.com"
+      ]
+      protocols {
+        port = "443"
+        type = "Https"
+      }
+    }
+    rule {
+      name = "NPM"
+      source_addresses = ["*"]
+      destination_fqdns = ["registry.npmjs.org"]
+      protocols {
+        port = "443"
+        type = "Https"
+      }
+    }
+  }
+  depends_on = [
+    azurerm_firewall_policy.firewall_policy,
+  ]
+}
+
 resource "azurerm_firewall" "firewall" {
   location            = var.location
   name                = "${var.base_name}-firewall"
   resource_group_name = azurerm_resource_group.resource_group.name
+  firewall_policy_id = azurerm_firewall_policy.firewall_policy.id
   sku_name            = "AZFW_VNet"
   sku_tier            = "Standard"
   ip_configuration {
@@ -87,84 +169,91 @@ resource "azurerm_firewall" "firewall" {
     public_ip_address_id = azurerm_public_ip.firewall_public_ip.id
     subnet_id            = azurerm_subnet.firewall_subnet.id
   }
+  management_ip_configuration {
+    name                 = "mgmtIpConfig"
+    public_ip_address_id = azurerm_public_ip.firewall_management_public_ip.id
+    subnet_id            = azurerm_subnet.management_subnet.id
+  }
   depends_on = [
     azurerm_public_ip.firewall_public_ip,
+    azurerm_public_ip.firewall_management_public_ip,
     azurerm_subnet.firewall_subnet,
+    azurerm_firewall_policy.firewall_policy
   ]
 }
 
-resource "azurerm_firewall_network_rule_collection" "network_rules" {
-  name                = "${var.base_name}-firewall-nrc"
-  azure_firewall_name = azurerm_firewall.firewall.name
-  resource_group_name = azurerm_resource_group.resource_group.name
-  priority            = 100
-  action              = "Allow"
+# resource "azurerm_firewall_network_rule_collection" "network_rules" {
+#   name                = "${var.base_name}-firewall-nrc"
+#   azure_firewall_name = azurerm_firewall.firewall.name
+#   resource_group_name = azurerm_resource_group.resource_group.name
+#   priority            = 100
+#   action              = "Allow"
 
-  rule {
-    name = "AzureCloud"
+#   rule {
+#     name = "AzureCloud"
 
-    source_addresses = [
-      "*",
-    ]
+#     source_addresses = [
+#       "*",
+#     ]
 
-    destination_ports = [
-      "443",
-    ]
+#     destination_ports = [
+#       "443",
+#     ]
 
-    destination_addresses = [
-      "AzureCloud",
-    ]
+#     destination_addresses = [
+#       "AzureCloud",
+#     ]
 
-    protocols = [
-      "TCP"
-    ]
-  }
-}
+#     protocols = [
+#       "TCP"
+#     ]
+#   }
+# }
 
-resource "azurerm_firewall_application_rule_collection" "application_rules" {
-  name                = "${var.base_name}-firewall-arc"
-  azure_firewall_name = azurerm_firewall.firewall.name
-  resource_group_name = azurerm_resource_group.resource_group.name
-  priority            = 1000
-  action              = "Allow"
+# resource "azurerm_firewall_application_rule_collection" "application_rules" {
+#   name                = "${var.base_name}-firewall-arc"
+#   azure_firewall_name = azurerm_firewall.firewall.name
+#   resource_group_name = azurerm_resource_group.resource_group.name
+#   priority            = 1000
+#   action              = "Allow"
 
-  rule {
-    name = "GitHub"
+#   rule {
+#     name = "GitHub"
 
-    source_addresses = [
-      "*",
-    ]
+#     source_addresses = [
+#       "*",
+#     ]
 
-    target_fqdns = [
-      "github.com",
-      "*.github.com",
-      "*.githubusercontent.com",
-      "*.githubapp.com"
-    ]
+#     target_fqdns = [
+#       "github.com",
+#       "*.github.com",
+#       "*.githubusercontent.com",
+#       "*.githubapp.com"
+#     ]
 
-    protocol {
-      port = "443"
-      type = "Https"
-    }
-  }
+#     protocol {
+#       port = "443"
+#       type = "Https"
+#     }
+#   }
 
-    rule {
-    name = "NPM"
+#     rule {
+#     name = "NPM"
 
-    source_addresses = [
-      "*",
-    ]
+#     source_addresses = [
+#       "*",
+#     ]
 
-    target_fqdns = [
-      "registry.npmjs.org"
-    ]
+#     target_fqdns = [
+#       "registry.npmjs.org"
+#     ]
 
-    protocol {
-      port = "443"
-      type = "Https"
-    }
-  }
-}
+#     protocol {
+#       port = "443"
+#       type = "Https"
+#     }
+#   }
+# }
 
 resource "azurerm_route_table" "route_table" {
   location            = var.location
@@ -215,7 +304,7 @@ resource null_resource github_network_settings {
 
   provisioner "local-exec" {
     when = create
-    command = "../scripts/create-ns.sh ${self.triggers.rg_name} ${self.triggers.ns_name} ${var.location} ${self.triggers.subnet_id} ${var.gh_org_id} >> ${path.module}/ns.json"
+    command = "../scripts/create-ns.sh ${self.triggers.rg_name} ${self.triggers.ns_name} ${var.location} ${self.triggers.subnet_id} ${var.gh_org_id}"
   }
 
   provisioner "local-exec" {
@@ -224,8 +313,9 @@ resource null_resource github_network_settings {
   }
 }
 
-data local_file ns {
-  filename = "${path.module}/ns.json"
+# This data source is used to get the networkSettings resource created above, so that we can return its ID as an output.
+data "azurerm_resources" "github_network_settings" {
+  name = local.ns_name
   depends_on = [
     null_resource.github_network_settings
   ]
