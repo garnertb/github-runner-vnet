@@ -1,3 +1,3 @@
 output "networkSettings_id" {
-  value = jsondecode(data.local_file.ns.content).GitHubId
+    value = data.azurerm_resources.github_network_settings.resources[0].tags.GitHubId
 }
