@@ -7,6 +7,11 @@ terraform {
   }
 }
 
+locals {
+  rg_name = "${var.base_name}-rg"
+  ns_name = "${var.base_name}-ns"
+}
+
 # You need this if you haven't already registered the GitHub.Network resource provider in your Azure subscription.
 # Terraform doesn't manage this type of create-once-and-never-delete resource very well, so I've just commented it out.
 # Even with the lifecycle/prevent_destroy, it will still throw an error if you delete the resources manually with "terraform destroy".
@@ -147,22 +152,29 @@ resource "azurerm_subnet" "runner_subnet" {
   }
 }
 
-# There is no Terraform provider for GitHub.Network, so we have to use a null_resource and local-exec to call a script that uses the Azure CLI to create the network settings.
+# There is no Terraform provider for GitHub.Network, so we have to use a null_resource and
+# local-exec to call a script that uses the Azure CLI to create the network settings. We
+# can't add these provisioners to the runner subnet resource because a destroy provisioner
+# doesn't have access to any other resources including vars and locals. We need to use these
+# triggers to get those values. 
+
+# WARNING: Deleting this resource will fail if the networkSettings is still in use in github.com. You need
+# to delete resources in github.com before trying to delete the Azure resources.
 resource null_resource github_network_settings {
   triggers = {
-    base_name = var.base_name
-    rg_name = azurerm_resource_group.resource_group.name
+    ns_name = local.ns_name
+    rg_name = local.rg_name
+    subnet_id = azurerm_subnet.runner_subnet.id
   }
 
   provisioner "local-exec" {
     when = create
-    # Saving the output to a file and reading it back in is a hack to get around the fact that Terraform doesn't support reading outputs from local-exec
-    command = "../scripts/create-ns.sh ${azurerm_resource_group.resource_group.name} ${var.base_name}-ns ${var.location} ${azurerm_subnet.runner_subnet.id} ${var.gh_org_id} >| ${path.module}/ns.json"
+    command = "../scripts/create-ns.sh ${self.triggers.rg_name} ${self.triggers.ns_name} ${var.location} ${self.triggers.subnet_id} ${var.gh_org_id} >> ${path.module}/ns.json"
   }
 
   provisioner "local-exec" {
     when = destroy
-    command = "../scripts/delete-ns.sh ${self.triggers.rg_name} ${self.triggers.base_name}-ns"
+    command = "../scripts/delete-ns.sh ${self.triggers.rg_name} ${self.triggers.ns_name}"
   }
 }
 
