@@ -93,6 +93,79 @@ resource "azurerm_firewall" "firewall" {
   ]
 }
 
+resource "azurerm_firewall_network_rule_collection" "network_rules" {
+  name                = "${var.base_name}-firewall-nrc"
+  azure_firewall_name = azurerm_firewall.firewall.name
+  resource_group_name = azurerm_resource_group.resource_group.name
+  priority            = 100
+  action              = "Allow"
+
+  rule {
+    name = "AzureCloud"
+
+    source_addresses = [
+      "*",
+    ]
+
+    destination_ports = [
+      "443",
+    ]
+
+    destination_addresses = [
+      "AzureCloud",
+    ]
+
+    protocols = [
+      "TCP"
+    ]
+  }
+}
+
+resource "azurerm_firewall_application_rule_collection" "application_rules" {
+  name                = "${var.base_name}-firewall-arc"
+  azure_firewall_name = azurerm_firewall.firewall.name
+  resource_group_name = azurerm_resource_group.resource_group.name
+  priority            = 1000
+  action              = "Allow"
+
+  rule {
+    name = "GitHub"
+
+    source_addresses = [
+      "*",
+    ]
+
+    target_fqdns = [
+      "github.com",
+      "*.github.com",
+      "*.githubusercontent.com",
+      "*.githubapp.com"
+    ]
+
+    protocol {
+      port = "443"
+      type = "Https"
+    }
+  }
+
+    rule {
+    name = "NPM"
+
+    source_addresses = [
+      "*",
+    ]
+
+    target_fqdns = [
+      "registry.npmjs.org"
+    ]
+
+    protocol {
+      port = "443"
+      type = "Https"
+    }
+  }
+}
+
 resource "azurerm_route_table" "route_table" {
   location            = var.location
   name                = "${var.base_name}-rt"
