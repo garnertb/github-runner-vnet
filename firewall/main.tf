@@ -40,7 +40,8 @@ resource "azurerm_virtual_network" "vnet" {
 
 resource "azurerm_subnet" "firewall_subnet" {
   address_prefixes     = var.firewall_subnet_address_prefixes
-  name                 = "AzureFirewallSubnet" # for some reason the subnet name has to be exactly this, in order for the subnet to be used for a firewall
+  # The subnet name has to be exactly this, in order for the subnet to be used for a firewall
+  name                 = "AzureFirewallSubnet"
   resource_group_name  = azurerm_resource_group.resource_group.name
   virtual_network_name = azurerm_virtual_network.vnet.name
   depends_on = [
@@ -50,6 +51,7 @@ resource "azurerm_subnet" "firewall_subnet" {
 
 resource "azurerm_subnet" "management_subnet" {
   address_prefixes     = var.firewall_management_subnet_address_prefixes
+  # The subnet name has to be exactly this in order for the subnet to be used for the firewall management
   name                 = "AzureFirewallManagementSubnet"
   resource_group_name  = azurerm_resource_group.resource_group.name
   virtual_network_name = azurerm_virtual_network.vnet.name
