@@ -233,7 +233,7 @@ resource null_resource github_network_settings {
 
   provisioner "local-exec" {
     when = create
-    command = "../scripts/create-ns.sh ${self.triggers.rg_name} ${self.triggers.ns_name} ${var.location} ${self.triggers.subnet_id} ${var.gh_org_id}"
+    command = "../scripts/create-ns.sh ${self.triggers.rg_name} ${self.triggers.ns_name} ${var.location} ${self.triggers.subnet_id} ${var.github_org_id}"
   }
 
   provisioner "local-exec" {

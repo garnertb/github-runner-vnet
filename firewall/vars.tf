@@ -33,7 +33,7 @@ variable "firewall_management_subnet_address_prefixes" {
   default     = ["10.0.2.0/26"]
 }
 
-variable "gh_org_id" {
+variable "github_org_id" {
   description = "GitHub Organization ID"
   type        = string
 }
