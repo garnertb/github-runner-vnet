@@ -37,3 +37,9 @@ variable "github_org_id" {
   description = "GitHub Organization ID"
   type        = string
 }
+
+variable "include_log_analytics" {
+  description = "Create resources related to log analytics"
+  type = bool
+  default = false
+}
