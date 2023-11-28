@@ -261,7 +261,8 @@ resource "azurerm_log_analytics_workspace" "law" {
 }
 
 resource "azurerm_monitor_diagnostic_setting" "firewall_diagnostic_settings" {
-  name               = "${var.base_name}-firewall-diagnostic-settings"
+  count = local.logging_count
+  name = "${var.base_name}-firewall-diagnostic-settings"
   target_resource_id = azurerm_firewall.firewall.id
   log_analytics_workspace_id = azurerm_log_analytics_workspace.law[0].id
   log_analytics_destination_type = "Dedicated"
