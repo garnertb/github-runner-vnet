@@ -1,0 +1,50 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "name": {
+            "type": "string",
+            "metadata": {
+                "description": "The name of the GitHub Network Settings resource."
+            }
+        },
+        "organizationId": {
+            "type": "string",
+            "metadata": {
+                "description": "The ID of the GitHub organization."
+            }
+        },
+        "subnetId": {
+            "type": "string",
+            "metadata": {
+                "description": "The ID of the subnet."
+            }
+        },
+        "apiVersion": {
+            "type": "string",
+            "defaultValue": "2023-11-01-preview",
+            "metadata": {
+                "description": "The API version of the GitHub Network Settings resource."
+            }
+        }
+    },
+    "resources": [
+        {
+            "type": "GitHub.Network/networkSettings",
+            "apiVersion": "[parameters('apiVersion')]",
+            "name": "[parameters('name')]",
+            "location": "[resourceGroup().location]",
+            "properties": {
+                "organizationId": "[parameters('organizationId')]",
+                "subnetId": "[parameters('subnetId')]"
+            }
+        }
+    ]
+    ,
+    "outputs": {
+        "gitHubId": {
+            "type": "string",
+            "value": "[reference(resourceId('GitHub.Network/networkSettings', parameters('name')), parameters('apiVersion'), 'Full').tags.GitHubId]"
+        }
+    }
+}

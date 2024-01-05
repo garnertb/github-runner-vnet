@@ -217,38 +217,29 @@ resource "azurerm_subnet_route_table_association" "runner_subnet_route_table_ass
   ]
 }
 
-# There is no Terraform provider for GitHub.Network, so we have to use a null_resource and
-# local-exec to call a script that uses the Azure CLI to create the network settings. We
-# can't add these provisioners to the runner subnet resource because a destroy provisioner
-# doesn't have access to any other resources including vars and locals. We need to use these
-# triggers to get those values. 
+# There is no Terraform provider for GitHub.Network, so we have to use an ARM deployment template
+# to create the GitHub.Network/networkSettings resource. See the note at the top of this documentation
+# on deleting nested resources: https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/resource_group_template_deployment
 
-# WARNING: Deleting this resource will fail if the networkSettings is still in use in github.com. You need
-# to delete resources in github.com before trying to delete the Azure resources.
-resource null_resource github_network_settings {
-  triggers = {
-    ns_name = local.ns_name
-    rg_name = local.rg_name
-    subnet_id = azurerm_subnet.runner_subnet.id
-  }
-
-  provisioner "local-exec" {
-    when = create
-    command = "../scripts/create-ns.sh ${self.triggers.rg_name} ${self.triggers.ns_name} ${var.location} ${self.triggers.subnet_id} ${var.github_org_id}"
-  }
-
-  provisioner "local-exec" {
-    when = destroy
-    command = "../scripts/delete-ns.sh ${self.triggers.rg_name} ${self.triggers.ns_name}"
-  }
-}
-
-# This data source is used to get the networkSettings resource created above, so that we can return its ID as an output.
-data "azurerm_resources" "github_network_settings" {
-  name = local.ns_name
-  depends_on = [
-    null_resource.github_network_settings
-  ]
+# WARNING: Attempting to delete the nested GitHub.Network/networkSettings resource will fail if the
+# networkSettings is still in use in github.com. You need to delete resources in github.com before
+# trying to delete the Azure resources.
+resource "azurerm_resource_group_template_deployment" "github_network_settings" {
+  name                = "${local.ns_name}-deployment"
+  resource_group_name = local.rg_name
+  deployment_mode     = "Incremental"
+  parameters_content = jsonencode({
+    "name" = {
+      value = local.ns_name
+    },
+    "subnetId" = {
+      value = azurerm_subnet.runner_subnet.id
+    },
+    "organizationId" = {
+      value = var.github_org_id
+    },
+  })
+  template_content    = file("${path.module}/../gh_network_settings_template.json")
 }
 
 resource "azurerm_log_analytics_workspace" "law" {
