@@ -1,3 +1,3 @@
 output "resource_id" {
-    value = data.azurerm_resources.github_network_settings.resources[0].tags.GitHubId
+    value = jsondecode(azurerm_resource_group_template_deployment.github_network_settings.output_content).gitHubId.value
 }
