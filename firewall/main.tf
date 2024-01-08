@@ -10,7 +10,6 @@ terraform {
 locals {
   rg_name = "${var.base_name}-rg"
   ns_name = "${var.base_name}-ns"
-  logging_count = var.include_log_analytics ? 1 : 0
 }
 
 # You need this if you haven't already registered the GitHub.Network resource provider in your Azure subscription.
@@ -240,25 +239,4 @@ resource "azurerm_resource_group_template_deployment" "github_network_settings" 
     },
   })
   template_content    = file("${path.module}/../gh_network_settings_template.json")
-}
-
-resource "azurerm_log_analytics_workspace" "law" {
-  count = local.logging_count
-  name                = "${var.base_name}-law"
-  location            = azurerm_resource_group.resource_group.location
-  resource_group_name = azurerm_resource_group.resource_group.name
-  sku                 = "PerGB2018"
-  retention_in_days   = 30
-}
-
-resource "azurerm_monitor_diagnostic_setting" "firewall_diagnostic_settings" {
-  count = local.logging_count
-  name = "${var.base_name}-firewall-diagnostic-settings"
-  target_resource_id = azurerm_firewall.firewall.id
-  log_analytics_workspace_id = azurerm_log_analytics_workspace.law[0].id
-  log_analytics_destination_type = "Dedicated"
-
-  enabled_log {
-    category_group = "allLogs"
-  }
 }

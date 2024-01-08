@@ -10,7 +10,6 @@ terraform {
 locals {
   rg_name = "${var.base_name}-rg"
   ns_name = "${var.base_name}-ns"
-  logging_count = var.include_log_analytics ? 1 : 0
 }
 
 # You need this if you haven't already registered the GitHub.Network resource provider in your Azure subscription.
@@ -181,55 +180,4 @@ resource "azurerm_resource_group_template_deployment" "github_network_settings" 
 resource "azurerm_subnet_network_security_group_association" "subnet_nsg_association" {
   subnet_id                 = azurerm_subnet.runner_subnet.id
   network_security_group_id = azurerm_network_security_group.actions_nsg.id
-}
-
-resource "azurerm_log_analytics_workspace" "law" {
-  count = local.logging_count
-  name                = "${var.base_name}-law"
-  location            = azurerm_resource_group.resource_group.location
-  resource_group_name = azurerm_resource_group.resource_group.name
-  sku                 = "PerGB2018"
-  retention_in_days   = 30
-}
-
-resource "azurerm_storage_account" "logging_sa" {
-  count = local.logging_count
-  name = var.logging_storage_account_name
-  resource_group_name      = azurerm_resource_group.resource_group.name
-  location                 = azurerm_resource_group.resource_group.location
-  account_tier             = "Standard"
-  account_replication_type = "LRS"
-}
-
-# This is only here to give an example of how to create the Network Watcher service, you probably want
-# to manage the Network Watcher service separately from this module.
-# resource "azurerm_network_watcher" "network_watcher" {
-#   name                = var.network_watcher_name
-#   location            = azurerm_resource_group.resource_group.location
-#   resource_group_name = azurerm_resource_group.resource_group.name
-# }
-
-resource "azurerm_network_watcher_flow_log" "nsg_flow_log" {
-  count = local.logging_count
-  network_watcher_name = var.network_watcher_name
-  resource_group_name  = var.network_watcher_resource_group
-  name                 = "${var.base_name}-nsg-flow-log"
-
-  network_security_group_id = azurerm_network_security_group.actions_nsg.id
-  storage_account_id        = azurerm_storage_account.logging_sa[0].id
-  enabled                   = true
-  version = 2
-
-  retention_policy {
-    enabled = true
-    days    = 7
-  }
-
-  traffic_analytics {
-    enabled               = true
-    workspace_id          = azurerm_log_analytics_workspace.law[0].workspace_id
-    workspace_region      = azurerm_log_analytics_workspace.law[0].location
-    workspace_resource_id = azurerm_log_analytics_workspace.law[0].id
-    interval_in_minutes   = 10
-  }
 }
