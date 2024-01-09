@@ -158,7 +158,7 @@ resource "azurerm_subnet" "runner_subnet" {
 resource "azurerm_resource_group_template_deployment" "network_settings" {
   name                = local.nsd_name
   resource_group_name = azurerm_resource_group.resource_group.name
-  deployment_mode     = "Complete"
+  deployment_mode     = "Incremental"
 
   parameters_content = jsonencode({
     "ns_name" = {
