@@ -10,7 +10,6 @@ terraform {
 locals {
   rg_name = "${var.base_name}-rg"
   ns_name = "${var.base_name}-ns"
-  nsd_name = "${var.base_name}-nsd"
 }
 
 # You need this if you haven't already registered the GitHub.Network resource provider in your Azure subscription.
@@ -153,71 +152,32 @@ resource "azurerm_subnet" "runner_subnet" {
   }
 }
 
-# WARNING: Deleting this resource will fail if the networkSettings is still in use in github.com. You need
-# to delete resources in github.com before trying to delete the Azure resources.
-resource "azurerm_resource_group_template_deployment" "network_settings" {
-  name                = local.nsd_name
-  resource_group_name = azurerm_resource_group.resource_group.name
-  deployment_mode     = "Complete"
+# There is no Terraform provider for GitHub.Network, so we have to use an ARM deployment template
+# to create the GitHub.Network/networkSettings resource. See the note at the top of this documentation
+# on deleting nested resources: https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/resource_group_template_deployment
 
+# WARNING: Attempting to delete the nested GitHub.Network/networkSettings resource will fail if the
+# networkSettings is still in use in github.com. You need to delete resources in github.com before
+# trying to delete the Azure resources.
+resource "azurerm_resource_group_template_deployment" "github_network_settings" {
+  name                = "${local.ns_name}-deployment"
+  resource_group_name = local.rg_name
+  deployment_mode     = "Incremental"
   parameters_content = jsonencode({
-    "ns_name" = {
-      "value" = local.ns_name
+    "name" = {
+      value = local.ns_name
     },
-    "location" = {
-      "value" = var.location
+    "subnetId" = {
+      value = azurerm_subnet.runner_subnet.id
     },
-    "subnet_id" = {
-      "value" = azurerm_subnet.runner_subnet.id
+    "organizationId" = {
+      value = var.github_org_id
     },
-    "github_org_id" = {
-      "value" = var.github_org_id
-    }
   })
-
-  template_content = <<TEMPLATE
-{
-  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
-  "contentVersion": "1.0.0.0",
-  "parameters": {
-    "ns_name": {
-      "type": "String"
-    },
-    "location": {
-      "type": "String"
-    },
-    "subnet_id": {
-      "type": "String"
-    },
-    "github_org_id": {
-      "type": "String"
-    }
-  },
-  "resources": [
-    {
-      "type": "GitHub.Network/networkSettings",
-      "apiVersion": "2023-11-01-preview",
-      "name": "[parameters('ns_name')]",
-      "location": "[parameters('location')]",
-      "properties": {
-        "subnetId": "[parameters('subnet_id')]",
-        "organizationId": "[parameters('github_org_id')]"
-      }
-    }
-  ]
-}
-TEMPLATE
+  template_content    = file("${path.module}/../gh_network_settings_template.json")
 }
 
 resource "azurerm_subnet_network_security_group_association" "subnet_nsg_association" {
   subnet_id                 = azurerm_subnet.runner_subnet.id
   network_security_group_id = azurerm_network_security_group.actions_nsg.id
-}
-
-# This data source is used to get the networkSettings resource created above, so that we can return its ID as an output.
-data "azurerm_resources" "github_network_settings" {
-  name = local.ns_name
-  depends_on = [
-    azurerm_resource_group_template_deployment.network_settings
-  ]
 }
