@@ -235,7 +235,7 @@ resource "azurerm_resource_group_template_deployment" "github_network_settings" 
       value = azurerm_subnet.runner_subnet.id
     },
     "organizationId" = {
-      value = var.github_org_id
+      value = var.github_enterprise_id
     },
   })
   template_content    = file("${path.module}/../shared/gh_network_settings_template.json")

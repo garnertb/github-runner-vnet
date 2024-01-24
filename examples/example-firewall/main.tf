@@ -3,5 +3,5 @@ module "vnet" {
     source = "github.com/garnertb/github-runner-vnet//modules/firewall"
 
     base_name = var.base_name
-    github_org_id = var.github_org_id
+    github_enterprise_id = var.github_enterprise_id
 }

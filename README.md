@@ -21,7 +21,7 @@ module "github_runner_vnet" {
   base_name = "vnet-test"
   
   # Retrieve through the GitHub API (see GitHub docs for instructions)
-  github_org_id = "12345"
+  github_enterprise_id = "12345"
 }
 ```
 
@@ -40,7 +40,7 @@ module "github_runner_vnet" {
   base_name = "vnet-test"
   
   # Retrieve through the GitHub API (see GitHub docs for instructions)
-  github_org_id = "12345"
+  github_enterprise_id = "12345"
 }
 ```
 
