@@ -34,3 +34,6 @@ override.tf.json
 terraform.rc
 
 dev.tfrc
+
+# Ignore terraform lock files since we are publishing this as a public module
+.terraform.lock.hcl

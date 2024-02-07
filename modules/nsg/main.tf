@@ -171,10 +171,10 @@ resource "azurerm_resource_group_template_deployment" "github_network_settings" 
       value = azurerm_subnet.runner_subnet.id
     },
     "organizationId" = {
-      value = var.github_org_id
+      value = var.github_enterprise_id
     },
   })
-  template_content    = file("${path.module}/../gh_network_settings_template.json")
+  template_content    = file("${path.module}/../shared/gh_network_settings_template.json")
 }
 
 resource "azurerm_subnet_network_security_group_association" "subnet_nsg_association" {

@@ -10,7 +10,7 @@ Terraform modules that configure and maintain the infrastructure needed to run G
 
 This repo contains two Terraform modules:
 
-* [nsg](./nsg/) module: Uses a [Network Security Group (NSG)](https://learn.microsoft.com/en-us/azure/virtual-network/network-security-groups-overview) to manage the network security of the VNet.
+* [nsg](./modules/nsg/) module: Uses a [Network Security Group (NSG)](https://learn.microsoft.com/en-us/azure/virtual-network/network-security-groups-overview) to manage the network security of the VNet.
 
 ```hcl
 module "github_runner_vnet" {
@@ -21,11 +21,11 @@ module "github_runner_vnet" {
   base_name = "vnet-test"
   
   # Retrieve through the GitHub API (see GitHub docs for instructions)
-  github_org_id = "12345"
+  github_enterprise_id = "12345"
 }
 ```
 
-* [firewall](./firewall/) module: Uses an [Azure Firewall](https://learn.microsoft.com/en-us/azure/firewall/overview) to manage the network security of the vnet.
+* [firewall](./modules/firewall/) module: Uses an [Azure Firewall](https://learn.microsoft.com/en-us/azure/firewall/overview) to manage the network security of the VNet.
 
 <details><summary>Terraform config for the firewall</summary>
 
@@ -40,7 +40,7 @@ module "github_runner_vnet" {
   base_name = "vnet-test"
   
   # Retrieve through the GitHub API (see GitHub docs for instructions)
-  github_org_id = "12345"
+  github_enterprise_id = "12345"
 }
 ```
 
