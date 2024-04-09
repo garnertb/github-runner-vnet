@@ -134,13 +134,18 @@ resource "azurerm_firewall_policy_rule_collection_group" "firewall_policy_rule_c
       name = "GitHub"
       source_addresses = ["*"]
       destination_fqdns = [
+        # For essential operation
         "github.com",
         "api.github.com",
         "*.actions.githubusercontent.com",
+        # For downloading actions
         "codeload.github.com",
+        # For job summaries, logs, artifacts, and caches
         "*.blob.core.windows.net",
+        # For packages
         "*.pkg.github.com",
         "ghcr.io",
+        # For LFS
         "github-cloud.githubusercontent.com",
         "github-cloud.s3.amazonaws.com"
       ]
