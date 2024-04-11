@@ -134,19 +134,19 @@ resource "azurerm_firewall_policy_rule_collection_group" "firewall_policy_rule_c
       name = "GitHub"
       source_addresses = ["*"]
       destination_fqdns = [
+        # These FQDNs have been taken from the GitHub documentation for self-hosted runner networking
+        # and the https://api.github.com/meta API response. Both sources list more specific FQDNs so 
+        # organizations wishing to minimize use of wildcards can consult those sources to build a more
+        # explicit list of required FQDNs.
         # For essential operation
         "github.com",
-        "api.github.com",
-        "*.actions.githubusercontent.com",
-        # For downloading actions
-        "codeload.github.com",
-        # For job summaries, logs, artifacts, and caches
+        "*.github.com",
+        "*.githubusercontent.com",
         "*.blob.core.windows.net",
         # For packages
-        "*.pkg.github.com",
-        "ghcr.io",
+        "*.ghcr.io",
+        "*.githubassets.com",
         # For LFS
-        "github-cloud.githubusercontent.com",
         "github-cloud.s3.amazonaws.com"
       ]
       protocols {
@@ -154,7 +154,7 @@ resource "azurerm_firewall_policy_rule_collection_group" "firewall_policy_rule_c
         type = "Https"
       }
     }
-    # Sample rule for allowing access to registry.npmjs.org
+    # Sample rule for allowing access to a 3rd party service, the NPM registry at registry.npmjs.org
     # rule {
     #   name = "NPM"
     #   source_addresses = ["*"]
