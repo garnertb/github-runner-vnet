@@ -144,6 +144,7 @@ resource "azurerm_firewall_policy_rule_collection_group" "firewall_policy_rule_c
         "*.githubusercontent.com",
         "*.blob.core.windows.net",
         # For packages
+        "ghcr.io",
         "*.ghcr.io",
         "*.githubassets.com",
         # For LFS
