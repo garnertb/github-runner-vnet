@@ -115,12 +115,12 @@ resource "azurerm_firewall_policy_rule_collection_group" "firewall_policy_rule_c
 
   network_rule_collection {
     action   = "Allow"
-    name     = "AllowAzureCloud"
+    name     = "AllowAzureStorage"
     priority = 100
     rule {
-      destination_addresses = ["AzureCloud"]
+      destination_addresses = ["Storage"]
       destination_ports     = ["443"]
-      name                  = "AzureCloud"
+      name                  = "AzureStorage"
       protocols             = ["TCP"]
       source_addresses      = ["*"]
     }
@@ -134,25 +134,37 @@ resource "azurerm_firewall_policy_rule_collection_group" "firewall_policy_rule_c
       name = "GitHub"
       source_addresses = ["*"]
       destination_fqdns = [
+        # These FQDNs have been taken from the GitHub documentation for self-hosted runner networking
+        # and the https://api.github.com/meta API response. Both sources list more specific FQDNs so 
+        # organizations wishing to minimize use of wildcards can consult those sources to build a more
+        # explicit list of required FQDNs.
+        # For essential operation
         "github.com",
         "*.github.com",
         "*.githubusercontent.com",
-        "*.githubapp.com"
+        "*.blob.core.windows.net",
+        # For packages
+        "ghcr.io",
+        "*.ghcr.io",
+        "*.githubassets.com",
+        # For LFS
+        "github-cloud.s3.amazonaws.com"
       ]
       protocols {
         port = "443"
         type = "Https"
       }
     }
-    rule {
-      name = "NPM"
-      source_addresses = ["*"]
-      destination_fqdns = ["registry.npmjs.org"]
-      protocols {
-        port = "443"
-        type = "Https"
-      }
-    }
+    # Sample rule for allowing access to a 3rd party service, the NPM registry at registry.npmjs.org
+    # rule {
+    #   name = "NPM"
+    #   source_addresses = ["*"]
+    #   destination_fqdns = ["registry.npmjs.org"]
+    #   protocols {
+    #     port = "443"
+    #     type = "Https"
+    #   }
+    # }
   }
   depends_on = [
     azurerm_firewall_policy.firewall_policy,
@@ -234,8 +246,8 @@ resource "azurerm_resource_group_template_deployment" "github_network_settings" 
     "subnetId" = {
       value = azurerm_subnet.runner_subnet.id
     },
-    "organizationId" = {
-      value = var.github_enterprise_id
+    "businessId" = {
+      value = var.github_business_id
     },
   })
   template_content    = file("${path.module}/../shared/gh_network_settings_template.json")

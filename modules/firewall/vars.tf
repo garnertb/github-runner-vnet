@@ -33,7 +33,7 @@ variable "firewall_management_subnet_address_prefixes" {
   default     = ["10.0.2.0/26"]
 }
 
-variable "github_enterprise_id" {
-  description = "GitHub Enterprise Database ID"
+variable "github_business_id" {
+  description = "GitHub Enterprise or Organization Database ID"
   type        = string
 }

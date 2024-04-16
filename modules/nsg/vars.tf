@@ -21,7 +21,7 @@ variable "runner_subnet_address_prefixes" {
   default     = ["10.0.0.0/24"]
 }
 
-variable "github_enterprise_id" {
-  description = "GitHub Enterprise Database ID"
+variable "github_business_id" {
+  description = "GitHub Enterprise or Organization Database ID"
   type        = string
 }
