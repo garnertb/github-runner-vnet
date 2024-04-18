@@ -49,3 +49,11 @@ module "github_runner_vnet" {
 The output of these modules is the Resource ID for the `GitHub.Network/networkSettings` resource. Paste this ID into the github.com UI for configuring the Azure Virtual Network.
 
 ![GitHub UI](./images/github-az-network-settings.jpg)
+
+## License
+
+This project is licensed under the terms of the MIT open source license. Please refer to [MIT](./LICENSE) for the full terms.
+
+## Maintainers
+
+Please refer to [CODEOWNERS](./CODEOWNERS) for a list of maintainers.
