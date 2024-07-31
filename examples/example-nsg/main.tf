@@ -3,5 +3,5 @@ module "vnet" {
     source = "github.com/garnertb/github-runner-vnet//modules/nsg"
 
     base_name = var.base_name
-    github_enterprise_id = var.github_enterprise_id
+    github_business_id = var.github_business_id
 }
