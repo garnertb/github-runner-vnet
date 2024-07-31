@@ -3,7 +3,7 @@ variable "base_name" {
   type        = string
 }
 
-variable "github_enterprise_id" {
-  description = "GitHub Enterprise Database ID"
+variable "github_business_id" {
+  description = "GitHub Enterprise or Organization Database ID"
   type        = string
 }
