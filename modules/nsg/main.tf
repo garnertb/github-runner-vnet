@@ -275,22 +275,23 @@ resource "azurerm_subnet" "runner_subnet" {
 # WARNING: Attempting to delete the nested GitHub.Network/networkSettings resource will fail if the
 # networkSettings is still in use in github.com. You need to delete resources in github.com before
 # trying to delete the Azure resources.
-resource "azurerm_resource_group_template_deployment" "github_network_settings" {
-  name                = "${local.ns_name}-deployment"
-  resource_group_name = local.rg_name
-  deployment_mode     = "Incremental"
-  parameters_content = jsonencode({
-    "name" = {
-      value = local.ns_name
-    },
-    "subnetId" = {
-      value = azurerm_subnet.runner_subnet.id
-    },
-    "businessId" = {
-      value = var.github_business_id
-    },
+resource "azapi_resource" "github_network_settings" {
+  type                      = "GitHub.Network/networkSettings@2024-04-02"
+  name                      = "${local.ns_name}-deployment"
+  location                  = var.location
+  parent_id                 = azurerm_resource_group.resource_group.id
+  schema_validation_enabled = false
+  body = jsonencode({
+    properties = {
+      businessId = var.github_business_id
+      subnetId   = azurerm_subnet.runner_subnet.id
+    }
   })
-  template_content    = file("${path.module}/../shared/gh_network_settings_template.json")
+  response_export_values = ["tags.GitHubId"]
+
+  lifecycle {
+    ignore_changes = [tags]
+  }
 }
 
 resource "azurerm_subnet_network_security_group_association" "subnet_nsg_association" {
