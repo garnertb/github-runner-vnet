@@ -1,0 +1,37 @@
+name: Terraform Checks
+
+on:
+  workflow_dispatch:
+  pull_request:
+  push:
+    paths:
+      - '**.tf'
+
+permissions:
+  contents: read
+
+jobs:
+  validate-and-format:
+    name: Validate and Format Terraform Files
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        id: checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        id: terraform
+        uses: hashicorp/setup-terraform@v3.1.1
+      
+      - name: Initialize Terraform
+        id: init
+        run: terraform init -backend=false
+
+      - name: Validate Terraform
+        id: validate
+        run: terraform validate
+
+      - name: Format Terraform
+        id: format
+        run: terraform fmt -check -recursive
