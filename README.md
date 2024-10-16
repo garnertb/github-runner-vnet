@@ -1,5 +1,9 @@
 # github-runner-vnet
 
+
+> [!CAUTION]
+> This repository has moved [under the GitHub organization](https://github.com/github/terraform-github-runner-vnet) and is no longer maintained here.
+
 Terraform modules that configure and maintain the infrastructure needed to run GitHub-Hosted Action Runners in a [private network](https://docs.github.com/en/enterprise-cloud@latest/admin/configuration/configuring-private-networking-for-hosted-compute-products/configuring-private-networking-for-github-hosted-runners).
 
 ## Quick Start
